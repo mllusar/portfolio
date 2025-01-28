@@ -39,7 +39,7 @@ jobs:
       run: |
         git add -f build  # Ajouter les fichiers générés
         git commit -m "Deploy to GitHub Pages"
-        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mllusar/portfolio.git build --force
+        git push origin build --force  # Forcer le push sur la branche 'build'
       
     # Déployer sur GitHub Pages à partir de la branche 'build'
     - name: Deploy to GitHub Pages

@@ -1,56 +1,50 @@
-name: Deploy to GitHub Pages
+name: Deploy Svelte SPA to GitHub Pages
 
 on:
   push:
-    branches: 'main'
+    branches:
+      - main  # Déclenche l'action sur un push vers la branche 'main'
 
 jobs:
-  build_site:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # If you're using pnpm, add this step then change the commands and cache key below to use `pnpm`
-      # - name: Install pnpm
-      #   uses: pnpm/action-setup@v3
-      #   with:
-      #     version: 8
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
- node-version: 20
- cache: npm
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: build
-        env:
- BASE_PATH: '/portfolio'
-        run: |
- npm run build
-
-      - name: Upload Artifacts
-        uses: actions/upload-pages-artifact@v3
-        with:
- # this should match the `pages` option in your adapter-static options
- path: 'build/'
-
-  deploy:
-    needs: build_site
+  build:
     runs-on: ubuntu-latest
 
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
+    # Checkout du code
+    - name: Checkout code
+      uses: actions/checkout@v2
+    
+    # Installer les dépendances
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'  # Assurez-vous d'utiliser la bonne version de Node.js pour votre projet
+
+    - name: Install dependencies
+      run: npm install
+
+    # Build du projet Svelte
+    - name: Build Svelte app
+      run: npm run build  # Assurez-vous que la commande build génère les fichiers dans le dossier 'build'
+
+    # Créer la branche 'build' si elle n'existe pas encore
+    - name: Create 'build' branch
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git checkout -b build || git checkout build
+
+    # Pousser les fichiers dans la branche 'build'
+    - name: Push to 'build' branch
+      run: |
+        git add -f build  # Ajouter les fichiers générés
+        git commit -m "Deploy to GitHub Pages"
+        git push origin build --force  # Forcer le push sur la branche 'build'
+      
+    # Déployer sur GitHub Pages à partir de la branche 'build'
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@v4
+      with:
+        branch: build  # La branche contenant les fichiers de build
+        folder: build   # Le dossier contenant les fichiers à déployer
+        token: ${{ secrets.GITHUB_TOKEN }}  # Token d'authentification pour GitHub Pages
